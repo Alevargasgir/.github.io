@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asignación de Colores Aleatorios</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        .color-display {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 20px auto;
+            border: 3px solid #333;
+        }
+        .form-container {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .color-cell {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background-color: #ddd;
+            cursor: pointer;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab.active {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-bottom: none;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Asignación de Colores Aleatorios</h1>
+    
+    <div class="tabs">
+        <div class="tab active" onclick="openTab('registro')">Registro</div>
+        <div class="tab" onclick="openTab('admin')">Administrador</div>
+    </div>
+    
+    <div id="registro" class="tab-content active">
+        <div class="form-container">
+            <h2>Ingresa tu nombre para recibir un color</h2>
+            <div class="color-display" id="colorDisplay"></div>
+            <p id="colorName"></p>
+            <form id="registroForm">
+                <input type="text" id="nombre" placeholder="Tu nombre" required>
+                <button type="submit">Asignar Color</button>
+            </form>
+            <p id="resultado"></p>
+        </div>
+    </div>
+    
+    <div id="admin" class="tab-content">
+        <h2>Registro de Participantes</h2>
+        <input type="password" id="adminPassword" placeholder="Contraseña de administrador">
+        <button onclick="verificarPassword()">Ver Registros</button>
+        
+        <div id="registrosContainer" style="display:none;">
+            <table id="registrosTabla">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Color</th>
+                        <th>Fecha y Hora</th>
+                    </tr>
+                </thead>
+                <tbody id="registrosBody"></tbody>
+            </table>
+            <button onclick="descargarCSV()">Descargar como CSV</button>
+            <button onclick="limpiarRegistros()">Limpiar Registros</button>
+        </div>
+    </div>
+    
+    <script>
+        // Definir los colores disponibles
+        const colores = [
+            {nombre: "Rojo", hex: "#FF0000"},
+            {nombre: "Amarillo", hex: "#FFFF00"},
+            {nombre: "Blanco", hex: "#FFFFFF"},
+            {nombre: "Rosado", hex: "#FFC0CB"},
+            {nombre: "Morado", hex: "#800080"},
+            {nombre: "Verde", hex: "#008000"},
+            {nombre: "Naranja", hex: "#FFA500"},
+            {nombre: "Azul", hex: "#0000FF"}
+        ];
+        
+        // Contraseña del administrador (cámbiala por una segura)
+        const PASSWORD_ADMIN = "admin123";
+        
+        // Obtener registros del localStorage o inicializar un array vacío
+        let registros = JSON.parse(localStorage.getItem('registrosColores')) || [];
+        
+        // Función para cambiar entre pestañas
+        function openTab(tabName) {
+            // Ocultar todos los contenidos de pestaña
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+            
+            // Desactivar todas las pestañas
+            const tabs = document.getElementsByClassName('tab');
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove('active');
+            }
+            
+            // Activar la pestaña seleccionada
+            document.getElementById(tabName).classList.add('active');
+            
+            // Encontrar y activar el botón de la pestaña
+            const activeTabs = document.getElementsByClassName('tab');
+            for (let i = 0; i < activeTabs.length; i++) {
+                if (activeTabs[i].textContent.toLowerCase().includes(tabName)) {
+                    activeTabs[i].classList.add('active');
+                }
+            }
+        }
+        
+        // Función para asignar un color aleatorio
+        function asignarColorAleatorio() {
+            const indiceAleatorio = Math.floor(Math.random() * colores.length);
+            return colores[indiceAleatorio];
+        }
+        
+        // Función para verificar la contraseña del administrador
+        function verificarPassword() {
+            const password = document.getElementById('adminPassword').value;
+            if (password === PASSWORD_ADMIN) {
+                document.getElementById('registrosContainer').style.display = 'block';
+                mostrarRegistros();
+            } else {
+                alert('Contraseña incorrecta');
+            }
+        }
+        
+        // Función para mostrar los registros en la tabla
+        function mostrarRegistros() {
+            const tbody = document.getElementById('registrosBody');
+            tbody.innerHTML = '';
+            
+            registros.forEach(registro => {
+                const fila = document.createElement('tr');
+                
+                const celdaNombre = document.createElement('td');
+                celdaNombre.textContent = registro.nombre;
+                
+                const celdaColor = document.createElement('td');
+                const colorSpan = document.createElement('span');
+                colorSpan.className = 'color-cell';
+                colorSpan.style.backgroundColor = registro.colorHex;
+                celdaColor.appendChild(colorSpan);
+                celdaColor.appendChild(document.createTextNode(registro.colorNombre));
+                
+                const celdaFecha = document.createElement('td');
+                celdaFecha.textContent = registro.fecha;
+                
+                fila.appendChild(celdaNombre);
+                fila.appendChild(celdaColor);
+                fila.appendChild(celdaFecha);
+                
+                tbody.appendChild(fila);
+            });
+        }
+        
+        // Función para descargar registros como CSV
+        function descargarCSV() {
+            if (registros.length === 0) {
+                alert('No hay registros para descargar');
+                return;
+            }
+            
+            let csvContent = "data:text/csv;charset=utf-8,Nombre,Color,Fecha y Hora\n";
+            
+            registros.forEach(registro => {
+                csvContent += `${registro.nombre},${registro.colorNombre},${registro.fecha}\n`;
+            });
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "registros_colores.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Función para limpiar todos los registros
+        function limpiarRegistros() {
+            if (confirm('¿Estás seguro de que deseas eliminar TODOS los registros?')) {
+                registros = [];
+                localStorage.setItem('registrosColores', JSON.stringify(registros));
+                mostrarRegistros();
+                alert('Registros eliminados');
+            }
+        }
+        
+        // Configurar el formulario de registro
+        document.getElementById('registroForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const nombre = document.getElementById('nombre').value.trim();
+            
+            if (nombre) {
+                const colorAsignado = asignarColorAleatorio();
+                const fechaActual = new Date().toLocaleString();
+                
+                // Crear el registro
+                const nuevoRegistro = {
+                    nombre: nombre,
+                    colorNombre: colorAsignado.nombre,
+                    colorHex: colorAsignado.hex,
+                    fecha: fechaActual
+                };
+                
+                // Añadir al array de registros y guardar en localStorage
+                registros.push(nuevoRegistro);
+                localStorage.setItem('registrosColores', JSON.stringify(registros));
+                
+                // Mostrar el resultado
+                const colorDisplay = document.getElementById('colorDisplay');
+                colorDisplay.style.backgroundColor = colorAsignado.hex;
+                colorDisplay.style.display = 'block';
+                
+                document.getElementById('colorName').textContent = `¡${nombre}, tu color es ${colorAsignado.nombre}!`;
+                document.getElementById('resultado').textContent = `Registro exitoso: ${fechaActual}`;
+                document.getElementById('nombre').value = '';
+            }
+        });
+    </script>
+</body>
+</html>
